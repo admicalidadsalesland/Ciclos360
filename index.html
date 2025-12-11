@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Ciclos de Facturación</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      color: #1a202c;
+      position: relative;
+    }
+
+    .container {
+      max-width: 760px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 32px 28px;
+      border-radius: 22px;
+      box-shadow: 0 16px 50px rgba(0, 0, 0, 0.28);
+      animation: fadeIn 0.45s ease-out;
+      margin-bottom: 24px;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      text-align: center;
+      color: #2d3748;
+      margin-bottom: 8px;
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #718096;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 640px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .container {
+        padding: 24px 16px;
+      }
+    }
+
+    .form-group {
+      position: relative;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #2d3748;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    select {
+      width: 100%;
+      padding: 13px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 14px;
+      background: white;
+      color: #2d3748;
+      transition: all 0.3s ease;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 38px;
+    }
+
+    select:hover {
+      border-color: #667eea;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .help-section {
+      margin-top: 12px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .help-btn {
+      background: none;
+      border: none;
+      color: #667eea;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 4px 0;
+    }
+
+    .explanation {
+      display: none;
+      background: #f0f7ff;
+      padding: 14px;
+      border-radius: 10px;
+      margin-top: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #2d3748;
+      border: 1px solid #bee3f8;
+    }
+
+    .reset-btn {
+      background: #e53e3e;
+      color: white;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background 0.2s;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .reset-btn:hover {
+      background: #c53030;
+    }
+
+    .result {
+      margin-top: 26px;
+      padding: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 18px;
+      overflow: hidden;
+      animation: slideIn 0.4s ease-out;
+      box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .result-header {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .result h2 {
+      color: white;
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .copy-btn {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .result-content {
+      padding: 24px;
+      background: white;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 640px) {
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+    }
+
+    .info-item {
+      background: #f7fafc;
+      padding: 14px;
+      border-radius: 10px;
+      border-left: 4px solid #667eea;
+      transition: transform 0.2s ease;
+    }
+
+    .info-item:hover {
+      transform: translateX(3px);
+    }
+
+    .info-label {
+      font-size: 11px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    .info-value {
+      font-size: 17px;
+      color: #2d3748;
+      font-weight: 700;
+    }
+
+    .payment-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 640px) {
+      .payment-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .payment-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 18px;
+      border-radius: 14px;
+      color: white;
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .payment-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(102, 126, 234, 0.4);
+    }
+
+    .payment-card.second {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      box-shadow: 0 6px 16px rgba(245, 87, 108, 0.3);
+    }
+
+    .payment-card.second:hover {
+      box-shadow: 0 10px 24px rgba(245, 87, 108, 0.4);
+    }
+
+    .payment-label {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .payment-amount {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .payment-desc {
+      font-size: 11px;
+      opacity: 0.85;
+    }
+
+    .note {
+      margin-top: 20px;
+      padding: 18px;
+      background: #edf2f7;
+      border-radius: 10px;
+      border-left: 4px solid #4299e1;
+    }
+
+    .note-icon {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      background: #4299e1;
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 18px;
+      font-size: 11px;
+      font-weight: bold;
+      margin-right: 6px;
+    }
+
+    .note p {
+      font-size: 13px;
+      color: #4a5568;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .warning {
+      background: #fff8e6;
+      border-left-color: #f6ad55;
+      padding: 14px;
+      border-radius: 10px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #8c6e00;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 50px 20px;
+      color: #a0aec0;
+    }
+
+    .empty-state svg {
+      width: 70px;
+      height: 70px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      font-size: 15px;
+      margin: 0;
+    }
+
+    footer {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      text-align: center;
+      margin-top: auto;
+      padding: 12px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Calculadora de Facturación</h1>
+    <p class="subtitle">Calcula tu primer pago proporcional y conoce tus fechas de facturación</p>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="ciclo">Ciclo de Facturación</label>
+        <select id="ciclo" onchange="calcular()">
+          <option value="">Selecciona tu ciclo</option>
+          <option value="5">Ciclo 5</option>
+          <option value="9">Ciclo 9</option>
+          <option value="15">Ciclo 15</option>
+          <option value="17">Ciclo 17</option>
+          <option value="23">Ciclo 23</option>
+          <option value="27">Ciclo 27</option>
+          <option value="31">Ciclo 31</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="plan">Plan Postpago</label>
+        <select id="plan" onchange="calcular()">
+          <option value="">Selecciona tu plan</option>
+          <option value="25.9">S/ 25.90 / mes</option>
+          <option value="29.9">S/ 29.90 / mes</option>
+          <option value="35.9">S/ 35.90 / mes</option>
+          <option value="39.9">S/ 39.90 / mes</option>
+          <option value="45.9">S/ 45.90 / mes</option>
+          <option value="49.9">S/ 49.90 / mes</option>
+          <option value="55.9">S/ 55.90 / mes</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <button class="help-btn" onclick="toggleExplanation()">¿Cómo se calcula?</button>
+      <div class="explanation" id="explanation">
+        El <strong>primer pago</strong> se calcula desde <strong>hoy</strong> (fecha de activación) hasta el <strong>día anterior al inicio de tu ciclo</strong>.<br>
+        Ej: si hoy es <strong>9 de diciembre</strong> y tu ciclo inicia el <strong>16</strong>, usas el servicio del 9 al 15 → 7 días.<br>
+        Si hoy es el <strong>mismo día</strong> que inicia tu ciclo, pagarás el <strong>monto completo</strong> desde el primer día.
+      </div>
+    </div>
+
+    <button class="reset-btn" onclick="resetForm()">Limpiar Selección</button>
+
+    <div id="resultado"></div>
+  </div>
+
+<footer style="
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  margin-top: auto;
+  padding: 18px 0 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  width: 100%;
+  max-width: 760px;
+">
+  <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-2.75 6-8.5s-3-8.5-6-8.5c-1.25 0-2.5 1.06-4 1.06-1.5 0-2.75-1.06-4-1.06C6 5.94 3 8.69 3 14.44s3 8.5 6 8.5c1.25 0 2.5-1.06 4-1.06Z" />
+      <line x1="12" x2="12" y1="9" y2="13" />
+      <line x1="13" x2="11" y1="17" y2="17" />
+    </svg>
+    Desarrollado por <strong>Métricas</strong> para <strong>Ciclos360</strong> 😺
+  </div>
+</footer>
+
+  <script>
+    const ciclos = {
+      5:  { inicio: 6,  pago: 21 },
+      9:  { inicio: 10, pago: 25 },
+      15: { inicio: 16, pago: 1  },
+      17: { inicio: 18, pago: 5  },
+      23: { inicio: 24, pago: 9  },
+      27: { inicio: 28, pago: 13 },
+      31: { inicio: 1,  pago: 17 }
+    };
+
+    const importesDia = {
+      25.9: 0.86,
+      29.9: 1.00,
+      35.9: 1.20,
+      39.9: 1.33,
+      45.9: 1.53,
+      49.9: 1.66,
+      55.9: 1.86
+    };
+
+    function obtenerNombreMes(mes) {
+      const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      return meses[mes - 1];
+    }
+
+    // Cargar selección guardada
+    window.onload = function() {
+      const savedCiclo = localStorage.getItem('facturacion_ciclo');
+      const savedPlan = localStorage.getItem('facturacion_plan');
+      if (savedCiclo) document.getElementById('ciclo').value = savedCiclo;
+      if (savedPlan) document.getElementById('plan').value = savedPlan;
+      if (savedCiclo && savedPlan) calcular();
+    };
+
+    function toggleExplanation() {
+      const exp = document.getElementById('explanation');
+      exp.style.display = exp.style.display === 'block' ? 'none' : 'block';
+    }
+
+    async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        const btn = document.querySelector('.copy-btn');
+        const original = btn.innerText;
+        btn.innerText = '¡Copiado!';
+        setTimeout(() => btn.innerText = original, 1500);
+      } catch (err) {
+        console.warn('No se pudo copiar');
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('ciclo').value = '';
+      document.getElementById('plan').value = '';
+      document.getElementById('resultado').innerHTML = '';
+      localStorage.removeItem('facturacion_ciclo');
+      localStorage.removeItem('facturacion_plan');
+    }
+
+    function calcular() {
+      const cicloSelect = document.getElementById("ciclo").value;
+      const planSelect = document.getElementById("plan").value;
+      const resultadoDiv = document.getElementById("resultado");
+
+      if (cicloSelect) localStorage.setItem('facturacion_ciclo', cicloSelect);
+      if (planSelect) localStorage.setItem('facturacion_plan', planSelect);
+
+      if (!cicloSelect || !planSelect) {
+        resultadoDiv.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <p>Selecciona tu ciclo y plan para ver los resultados</p>
+          </div>
+        `;
+        return;
+      }
+
+      const ciclo = parseInt(cicloSelect);
+      const plan = parseFloat(planSelect);
+      const datosCiclo = ciclos[ciclo];
+      const importeDia = importesDia[plan];
+
+      // ✅ SIEMPRE usar la fecha actual del sistema
+      const hoy = new Date();
+      const diaHoy = hoy.getDate();
+      const mesHoy = hoy.getMonth() + 1;
+      const anioHoy = hoy.getFullYear();
+
+      const fechaInicio = datosCiclo.inicio;
+      const fechaPago = datosCiclo.pago;
+
+      let diasUso = 0;
+      let mesCiclo = mesHoy;
+      let anioCiclo = anioHoy;
+      let esMismoDia = false;
+
+      if (diaHoy < fechaInicio) {
+        diasUso = fechaInicio - diaHoy;
+      } else if (diaHoy === fechaInicio) {
+        diasUso = 0;
+        esMismoDia = true;
+      } else {
+        // hoy > inicio → ciclo empieza el próximo mes
+        const diasEnMesActual = new Date(anioHoy, mesHoy, 0).getDate();
+        diasUso = (diasEnMesActual - diaHoy) + fechaInicio;
+        mesCiclo = mesHoy === 12 ? 1 : mesHoy + 1;
+        if (mesHoy === 12) anioCiclo++;
+      }
+
+      let importeProporcional = "0.00";
+      let primerPagoTexto = "S/ " + plan.toFixed(2);
+      let tipoPrimerPago = "Mes completo";
+
+      if (diasUso > 0) {
+        importeProporcional = (diasUso * importeDia).toFixed(2);
+        primerPagoTexto = "S/ " + importeProporcional;
+        tipoPrimerPago = "Proporcional por " + diasUso + " días";
+      }
+
+      let mesPago = mesCiclo;
+      let anioPago = anioCiclo;
+      if (fechaPago < fechaInicio) {
+        mesPago = mesCiclo === 12 ? 1 : mesCiclo + 1;
+        if (mesCiclo === 12) anioPago++;
+      }
+
+      const hoyStr = `${diaHoy} de ${obtenerNombreMes(mesHoy)}`;
+      const inicioStr = `${fechaInicio} de ${obtenerNombreMes(mesCiclo)}`;
+      const pagoStr = `${fechaPago} de ${obtenerNombreMes(mesPago)}`;
+
+      let warning = '';
+      if (mesPago === 1) {
+        warning = `
+          <div class="warning">
+            ⚠️ Tu primer recibo se generará en <strong>enero</strong>. ¡Perfecto para no pagar en diciembre!
+          </div>
+        `;
+      }
+
+      const resumenTexto = 
+        `Ciclo: ${ciclo}\n` +
+        `Inicio del ciclo: ${inicioStr}\n` +
+        `Fecha de pago: ${pagoStr}\n` +
+        (diasUso > 0 ? `Días de uso: ${diasUso}\nPrimer pago: S/ ${importeProporcional}\n` : "Primer pago: Monto completo\n") +
+        `Segundo pago: S/ ${plan.toFixed(2)}\n` +
+        `Fecha de activación: ${hoyStr}`;
+
+      resultadoDiv.innerHTML = `
+        <div class="result">
+          <div class="result-header">
+            <h2>📊 Resumen de tu Facturación</h2>
+            <button class="copy-btn" onclick="copyToClipboard(\`${resumenTexto}\`)">Copiar</button>
+          </div>
+          <div class="result-content">
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">Fecha de Activación</div>
+                <div class="info-value">${hoyStr}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Ciclo</div>
+                <div class="info-value">Ciclo ${ciclo}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Inicio del Ciclo</div>
+                <div class="info-value">${inicioStr}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Fecha de Pago</div>
+                <div class="info-value">${pagoStr}</div>
+              </div>
+            </div>
+
+            <div class="payment-cards">
+              <div class="payment-card">
+                <div class="payment-label">Primer Pago (Aproximado)</div>
+                <div class="payment-amount">${primerPagoTexto}</div>
+                <div class="payment-desc">${tipoPrimerPago}</div>
+              </div>
+              <div class="payment-card second">
+                <div class="payment-label">Segundo Pago (Mes Completo)</div>
+                <div class="payment-amount">S/ ${plan.toFixed(2)}</div>
+                <div class="payment-desc">Ciclo completo de 30 días</div>
+              </div>
+            </div>
+
+            <div class="note">
+              <p>
+                <span class="note-icon">i</span>
+                <strong>Importante:</strong> 
+                ${esMismoDia 
+                  ? "Tu activación coincide con el inicio de tu ciclo. Pagarás el monto completo desde el primer día." 
+                  : "Tu primer pago es proporcional desde <strong>" + hoyStr + "</strong> hasta el día anterior al inicio de tu ciclo (<strong>" + inicioStr + "</strong>)."}
+                A partir del segundo mes, pagarás el monto completo del plan. 
+                El cargo diario de tu plan es de <strong>S/ ${importeDia}</strong>.
+              </p>
+            </div>
+
+            ${warning}
+          </div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
