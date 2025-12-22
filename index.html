@@ -424,9 +424,8 @@
     <div class="help-section">
       <button class="help-btn" onclick="toggleExplanation()">¿Cómo se calcula?</button>
       <div class="explanation" id="explanation">
-        El <strong>primer pago</strong> se calcula desde <strong>hoy</strong> (fecha de activación) hasta el <strong>último día del mes actual</strong>.<br>
-        El ciclo regular inicia el <strong>próximo mes</strong> si hoy es igual o mayor que el día de inicio del ciclo.<br>
-        La fecha de pago se determina en función del ciclo y puede caer en el mismo mes del inicio o en el siguiente.
+        El <strong>primer pago</strong> se calcula desde <strong>hoy</strong> (fecha de activación) hasta el <strong>día anterior al inicio del ciclo</strong>.<br>
+        El ciclo regular inicia en la próxima fecha programada de inicio. La fecha de pago se determina en función del ciclo.
       </div>
     </div>
 
@@ -476,10 +475,31 @@
       55.9: 1.86
     };
 
+    // Función para obtener el nombre del mes
     function obtenerNombreMes(mes) {
       const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
                      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
       return meses[mes - 1];
+    }
+
+    // Función para calcular los días completos entre dos fechas (excluyendo la fecha final)
+    function getDaysBetweenDates(startDate, endDate) {
+      // Clonar las fechas para no modificar las originales
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Reiniciar la hora para evitar problemas de zona horaria
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      
+      // Calcular la diferencia en milisegundos y convertir a días
+      const diffTime = end.getTime() - start.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      // Como queremos los días HASTA el día anterior al inicio del ciclo,
+      // y `endDate` es el primer día del ciclo, la diferencia ya está correcta.
+      // Ej: 22/12 al 16/01 -> 25 días, porque cuenta del 22/12 al 15/01.
+      return diffDays;
     }
 
     // Cargar selección guardada
@@ -516,159 +536,171 @@
       localStorage.removeItem('facturacion_plan');
     }
 
-function calcular() {
-  const cicloSelect = document.getElementById("ciclo").value;
-  const planSelect = document.getElementById("plan").value;
-  const resultadoDiv = document.getElementById("resultado");
+    function calcular() {
+      const cicloSelect = document.getElementById("ciclo").value;
+      const planSelect = document.getElementById("plan").value;
+      const resultadoDiv = document.getElementById("resultado");
 
-  if (cicloSelect) localStorage.setItem('facturacion_ciclo', cicloSelect);
-  if (planSelect) localStorage.setItem('facturacion_plan', planSelect);
+      if (cicloSelect) localStorage.setItem('facturacion_ciclo', cicloSelect);
+      if (planSelect) localStorage.setItem('facturacion_plan', planSelect);
 
-  if (!cicloSelect || !planSelect) {
-    resultadoDiv.innerHTML = `
-      <div class="empty-state">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-        </svg>
-        <p>Selecciona tu ciclo y plan para ver los resultados</p>
-      </div>
-    `;
-    return;
-  }
+      if (!cicloSelect || !planSelect) {
+        resultadoDiv.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <p>Selecciona tu ciclo y plan para ver los resultados</p>
+          </div>
+        `;
+        return;
+      }
 
-  const ciclo = parseInt(cicloSelect);
-  const plan = parseFloat(planSelect);
-  const datosCiclo = ciclos[ciclo];
-  const importeDia = importesDia[plan];
+      const ciclo = parseInt(cicloSelect);
+      const plan = parseFloat(planSelect);
+      const datosCiclo = ciclos[ciclo];
+      const importeDia = importesDia[plan];
 
-  const hoy = new Date();
-  const diaHoy = hoy.getDate();
-  const mesHoy = hoy.getMonth() + 1;
-  const anioHoy = hoy.getFullYear();
+      const hoy = new Date();
+      const diaHoy = hoy.getDate();
+      const mesHoy = hoy.getMonth() + 1;
+      const anioHoy = hoy.getFullYear();
 
-  const fechaInicio = datosCiclo.inicio;
-  const fechaPago = datosCiclo.pago;
+      const fechaInicio = datosCiclo.inicio;
+      const fechaPago = datosCiclo.pago;
 
-  let mesCiclo, anioCiclo, diasUso;
+      // Determinar la próxima fecha de inicio del ciclo
+      let mesCiclo, anioCiclo;
 
-  // 🔹 NUEVO: Detectar si hoy == inicio del ciclo
-  const esRenovacion = (diaHoy === fechaInicio);
+      if (diaHoy < fechaInicio) {
+        // El próximo inicio es en el mismo mes
+        mesCiclo = mesHoy;
+        anioCiclo = anioHoy;
+      } else if (diaHoy === fechaInicio) {
+        // Es el día de inicio, no hay pago proporcional
+        mesCiclo = mesHoy;
+        anioCiclo = anioHoy;
+      } else {
+        // El próximo inicio es el mes siguiente
+        if (mesHoy === 12) {
+          mesCiclo = 1;
+          anioCiclo = anioHoy + 1;
+        } else {
+          mesCiclo = mesHoy + 1;
+          anioCiclo = anioHoy;
+        }
+      }
 
-  if (diaHoy < fechaInicio) {
-    // El ciclo empieza este mes
-    diasUso = fechaInicio - diaHoy;
-    mesCiclo = mesHoy;
-    anioCiclo = anioHoy;
-  } else {
-    // Hoy >= inicio → el ciclo empieza el PRÓXIMO MES
-    const diasEnMesActual = new Date(anioHoy, mesHoy, 0).getDate();
-    diasUso = diasEnMesActual - diaHoy;
-    mesCiclo = mesHoy === 12 ? 1 : mesHoy + 1;
-    anioCiclo = mesHoy === 12 ? anioHoy + 1 : anioHoy;
-  }
+      // Crear la fecha de inicio del ciclo como objeto Date
+      // Nota: Los meses en Date son 0-indexed, por eso mesCiclo-1
+      const nextCycleStartDate = new Date(anioCiclo, mesCiclo - 1, fechaInicio);
 
-  // Determinar mes y año de pago
-  let mesPago = mesCiclo;
-  let anioPago = anioCiclo;
-  if (fechaPago < fechaInicio) {
-    mesPago = mesCiclo === 12 ? 1 : mesCiclo + 1;
-    anioPago = mesCiclo === 12 ? anioCiclo + 1 : anioCiclo;
-  }
+      // Lógica especial para renovación (hoy es el día de inicio)
+      const esRenovacion = (diaHoy === fechaInicio && mesHoy === mesCiclo && anioHoy === anioCiclo);
+      let diasUso, importeProporcional, tipoPrimerPago;
 
-  // 🔹 LÓGICA ESPECIAL: Si hoy == inicio → primer pago = monto completo
-  let importeProporcional, tipoPrimerPago;
+      if (esRenovacion) {
+        importeProporcional = plan.toFixed(2);
+        tipoPrimerPago = "Mes completo";
+        diasUso = 0;
+      } else {
+        // Calcular los días entre hoy y el día anterior al inicio del ciclo
+        diasUso = getDaysBetweenDates(hoy, nextCycleStartDate);
+        // Asegurarse de que no sea negativo
+        diasUso = Math.max(0, diasUso);
+        importeProporcional = (diasUso * importeDia).toFixed(2);
+        tipoPrimerPago = "Proporcional por " + diasUso + " días";
+      }
 
-  if (esRenovacion) {
-    importeProporcional = plan.toFixed(2); // Monto completo
-    tipoPrimerPago = "Mes completo";
-    diasUso = 0; // No hay días proporcional
-  } else {
-    importeProporcional = (diasUso * importeDia).toFixed(2);
-    tipoPrimerPago = "Proporcional por " + diasUso + " días";
-  }
+      const primerPagoTexto = "S/ " + importeProporcional;
 
-  const primerPagoTexto = "S/ " + importeProporcional;
+      // Determinar mes y año de pago
+      let mesPago = mesCiclo;
+      let anioPago = anioCiclo;
+      if (fechaPago < fechaInicio) {
+        mesPago = mesCiclo === 12 ? 1 : mesCiclo + 1;
+        anioPago = mesCiclo === 12 ? anioCiclo + 1 : anioCiclo;
+      }
 
-  const hoyStr = `${diaHoy} de ${obtenerNombreMes(mesHoy)}`;
-  const inicioStr = `${fechaInicio} de ${obtenerNombreMes(mesCiclo)}, ${anioCiclo}`;
-  const pagoStr = `${fechaPago} de ${obtenerNombreMes(mesPago)}, ${anioPago}`;
+      const hoyStr = `${diaHoy} de ${obtenerNombreMes(mesHoy)}`;
+      const inicioStr = `${fechaInicio} de ${obtenerNombreMes(mesCiclo)}, ${anioCiclo}`;
+      const pagoStr = `${fechaPago} de ${obtenerNombreMes(mesPago)}, ${anioPago}`;
 
-  let warning = '';
-  if (mesPago === 1) {
-    warning = `
-      <div class="warning">
-        ⚠️ Tu primer recibo se generará en <strong>enero</strong>. ¡Perfecto para no pagar en diciembre!
-      </div>
-    `;
-  }
+      let warning = '';
+      if (mesPago === 1) {
+        warning = `
+          <div class="warning">
+            ⚠️ Tu primer recibo se generará en <strong>enero</strong>. ¡Perfecto para no pagar en diciembre!
+          </div>
+        `;
+      }
 
-  const resumenTexto = 
-    `Ciclo: ${ciclo}\n` +
-    `Inicio del ciclo: ${inicioStr}\n` +
-    `Fecha de pago: ${pagoStr}\n` +
-    `Días de uso: ${diasUso}\n` +
-    `Primer pago: S/ ${importeProporcional}\n` +
-    `Segundo pago: S/ ${plan.toFixed(2)}\n` +
-    `Fecha de activación: ${hoyStr}`;
+      const resumenTexto = 
+        `Ciclo: ${ciclo}\n` +
+        `Inicio del ciclo: ${inicioStr}\n` +
+        `Fecha de pago: ${pagoStr}\n` +
+        `Días de uso: ${diasUso}\n` +
+        `Primer pago: S/ ${importeProporcional}\n` +
+        `Segundo pago: S/ ${plan.toFixed(2)}\n` +
+        `Fecha de activación: ${hoyStr}`;
 
-  // 🔹 Renderizado con condición en el label y en el texto de pago
-resultadoDiv.innerHTML = `
-  <div class="result">
-    <div class="result-header">
-      <h2>📊 Resumen de tu Facturación</h2>
-      <button class="copy-btn" onclick="copyToClipboard(\`${resumenTexto.replace(/`/g, '\\`')}\`)">Copiar</button>
-    </div>
-    <div class="result-content">
-      <div class="info-grid">
-        <div class="info-item">
-          <div class="info-label">Fecha de Activación</div>
-          <div class="info-value">${hoyStr}</div>
+      resultadoDiv.innerHTML = `
+        <div class="result">
+          <div class="result-header">
+            <h2>📊 Resumen de tu Facturación</h2>
+            <button class="copy-btn" onclick="copyToClipboard(\`${resumenTexto.replace(/`/g, '\\`')}\`)">Copiar</button>
+          </div>
+          <div class="result-content">
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">Fecha de Activación</div>
+                <div class="info-value">${hoyStr}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Ciclo</div>
+                <div class="info-value">Ciclo ${ciclo}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">${esRenovacion ? 'Renovación de Ciclo' : 'Inicio del Ciclo'}</div>
+                <div class="info-value">${inicioStr}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Fecha de Pago</div>
+                <div class="info-value">${pagoStr}</div>
+              </div>
+            </div>
+
+            <div class="payment-cards">
+              <div class="payment-card">
+                <div class="payment-label">Primer Pago (Aproximado)</div>
+                <div class="payment-amount">${primerPagoTexto}</div>
+                <div class="payment-desc">${tipoPrimerPago}</div>
+              </div>
+              <div class="payment-card second">
+                <div class="payment-label">Segundo Pago (Mes Completo)</div>
+                <div class="payment-amount">S/ ${plan.toFixed(2)}</div>
+                <div class="payment-desc">Ciclo completo de 30 días</div>
+              </div>
+            </div>
+
+            ${!esRenovacion ? `
+            <div class="note">
+              <p>
+                <span class="note-icon">i</span>
+                <strong>Importante:</strong> 
+                Tu primer pago es proporcional desde <strong>${hoyStr}</strong> hasta el día anterior al inicio del ciclo (<strong>${inicioStr}</strong>).
+                El ciclo regular inicia el <strong>${inicioStr}</strong>, y tu primer recibo se genera el <strong>${pagoStr}</strong>.
+                A partir del segundo mes, pagarás el monto completo del plan. 
+                El cargo diario de tu plan es de <strong>S/ ${importeDia}</strong>.
+              </p>
+            </div>
+            ` : ''}
+
+            ${warning}
+          </div>
         </div>
-        <div class="info-item">
-          <div class="info-label">Ciclo</div>
-          <div class="info-value">Ciclo ${ciclo}</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">${esRenovacion ? 'Renovación de Ciclo' : 'Inicio del Ciclo'}</div>
-          <div class="info-value">${inicioStr}</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Fecha de Pago</div>
-          <div class="info-value">${pagoStr}</div>
-        </div>
-      </div>
-
-      <div class="payment-cards">
-        <div class="payment-card">
-          <div class="payment-label">Primer Pago (Aproximado)</div>
-          <div class="payment-amount">${primerPagoTexto}</div>
-          <div class="payment-desc">${tipoPrimerPago}</div>
-        </div>
-        <div class="payment-card second">
-          <div class="payment-label">Segundo Pago (Mes Completo)</div>
-          <div class="payment-amount">S/ ${plan.toFixed(2)}</div>
-          <div class="payment-desc">Ciclo completo de 30 días</div>
-        </div>
-      </div>
-
-      ${!esRenovacion ? `
-      <div class="note">
-        <p>
-          <span class="note-icon">i</span>
-          <strong>Importante:</strong> 
-          Tu primer pago es proporcional desde <strong>${hoyStr}</strong> hasta el último día de este mes.
-          El ciclo regular inicia el <strong>${inicioStr}</strong>, y tu primer recibo se genera el <strong>${pagoStr}</strong>.
-          A partir del segundo mes, pagarás el monto completo del plan. 
-          El cargo diario de tu plan es de <strong>S/ ${importeDia}</strong>.
-        </p>
-      </div>
-      ` : ''}
-
-      ${warning}
-    </div>
-  </div>
-`;
- }
+      `;
+    }
     
   </script>
 </body>
