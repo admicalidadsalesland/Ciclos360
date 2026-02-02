@@ -116,7 +116,7 @@
     }
 
     select {
-      background-image: url("image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 14px center;
       padding-right: 38px;
@@ -408,8 +408,10 @@
           <option value="">Selecciona tu ciclo</option>
           <option value="5">Ciclo 5</option>
           <option value="9">Ciclo 9</option>
+          <option value="12">Ciclo 12</option>
           <option value="15">Ciclo 15</option>
           <option value="17">Ciclo 17</option>
+          <option value="20">Ciclo 20</option>
           <option value="23">Ciclo 23</option>
           <option value="27">Ciclo 27</option>
           <option value="31">Ciclo 31</option>
@@ -477,8 +479,10 @@
     const ciclos = {
       5:  { inicio: 6,  pago: 21 },
       9:  { inicio: 10, pago: 25 },
+      12: { inicio: 13, pago: 24 },
       15: { inicio: 16, pago: 1  },
       17: { inicio: 18, pago: 5  },
+      20: { inicio: 21, pago: 3  },
       23: { inicio: 24, pago: 9  },
       27: { inicio: 28, pago: 13 },
       31: { inicio: 1,  pago: 17 }
